@@ -193,7 +193,8 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
         X : array-like of shape (n_samples, n_features)
             Test samples.
 
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,) or also (n_samples, n_targets) if
+            multiple outputs
             True values for X.
 
         sample_weight : array-like of shape (n_samples,), default=None
@@ -293,11 +294,11 @@ class ForecastingCascade(BaseForecaster):
         lag features to create.
 
     use_exog : bool, default=False
-        Use or ignore the received features during fittig as X.
+        Use or ignore the received features during fitting as X.
         If False, exog_lags are ignored.
 
     accept_nan : bool, default=False
-        Use or ignore NaNs target observations during fittig.
+        Use or ignore NaNs target observations during fitting.
         At least one not-nan observation is required, after lags creation,
         to make a successful fit.
 
@@ -336,7 +337,20 @@ class ForecastingCascade(BaseForecaster):
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from sklearn.linear_model import Ridge
+    >>> from tsprial.forecasting import ForecastingCascade
+    >>> timesteps = 400
+    >>> e = np.random.normal(0,1, (timesteps,))
+    >>> y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+    >>> model = ForecastingCascade(
+    ...     Ridge(),
+    ...     lags=range(1,24+1),
+    ...     use_exog=False,
+    ...     accept_nan=False
+    ... )
+    >>> model.fit(np.arange(len(y)), y)
+    >>> forecasts = model.predict(np.arange(24*3))
     """
 
     def __init__(
@@ -516,7 +530,7 @@ class ForecastingCascade(BaseForecaster):
         if self.use_exog and self.exog_lags is not None:
             if last_X is None:
                 last_X = self._last_X.copy()
-            X = _vstack([last_X, X])
+            X = _vstack([last_X[-self.min_exog_samples:], X])
             if isinstance(self.exog_lags, dict):
                 X = _hstack(
                     [X[self.min_exog_samples_:]] + \
@@ -584,11 +598,11 @@ class ForecastingChain(BaseForecaster):
         lag features to create.
 
     use_exog : bool, default=False
-        Use or ignore the received features during fittig as X.
+        Use or ignore the received features during fitting as X.
         If False, exog_lags are ignored.
 
     accept_nan : bool, default=False
-        Use or ignore NaNs target observations during fittig.
+        Use or ignore NaNs target observations during fitting.
         At least one not-nan observation is required, after lags creation,
         to make a successful fit.
 
@@ -636,7 +650,21 @@ class ForecastingChain(BaseForecaster):
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from sklearn.linear_model import Ridge
+    >>> from tsprial.forecasting import ForecastingChain
+    >>> timesteps = 400
+    >>> e = np.random.normal(0,1, (timesteps,))
+    >>> y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+    >>> model = ForecastingChain(
+    ...     Ridge(),
+    ...     n_estimators=24,
+    ...     lags=range(1,24+1),
+    ...     use_exog=False,
+    ...     accept_nan=False
+    ... )
+    >>> model.fit(np.arange(len(y)), y)
+    >>> forecasts = model.predict(np.arange(24*3))
     """
 
     def __init__(
@@ -816,7 +844,7 @@ class ForecastingStacked(BaseForecaster):
         lag features to create.
 
     use_exog : bool, default=False
-        Use or ignore the received features during fittig as X.
+        Use or ignore the received features during fitting as X.
         If False, exog_lags are ignored.
 
     test_size : float or int, default=None
@@ -873,7 +901,21 @@ class ForecastingStacked(BaseForecaster):
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from sklearn.linear_model import Ridge
+    >>> from sklearn.tree import DecisionTreeRegressor
+    >>> from tsprial.forecasting import ForecastingStacked
+    >>> timesteps = 400
+    >>> e = np.random.normal(0,1, (timesteps,))
+    >>> y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+    >>> model = ForecastingStacked(
+    ...     [Ridge(), DecisionTreeRegressor()],
+    ...     test_size=24*3,
+    ...     lags=range(1,24+1),
+    ...     use_exog=False
+    ... )
+    >>> model.fit(np.arange(len(y)), y)
+    >>> forecasts = model.predict(np.arange(24*3))
     """
 
     def __init__(
@@ -1123,7 +1165,7 @@ class ForecastingRectified(BaseForecaster):
         lag features to create.
 
     use_exog : bool, default=False
-        Use or ignore the received features during fittig as X.
+        Use or ignore the received features during fitting as X.
         If False, exog_lags are ignored.
 
     test_size : float or int, default=None
@@ -1183,7 +1225,21 @@ class ForecastingRectified(BaseForecaster):
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from sklearn.linear_model import Ridge
+    >>> from tsprial.forecasting import ForecastingRectified
+    >>> timesteps = 400
+    >>> e = np.random.normal(0,1, (timesteps,))
+    >>> y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+    >>> model = ForecastingRectified(
+    ...     Ridge(),
+    ...     n_estimators=200,
+    ...     test_size=24*3,
+    ...     lags=range(1,24+1),
+    ...     use_exog=False
+    ... )
+    >>> model.fit(np.arange(len(y)), y)
+    >>> forecasts = model.predict(np.arange(24*3))
     """
 
     def __init__(
