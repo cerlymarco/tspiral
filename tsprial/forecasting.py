@@ -530,7 +530,7 @@ class ForecastingCascade(BaseForecaster):
         if self.use_exog and self.exog_lags is not None:
             if last_X is None:
                 last_X = self._last_X.copy()
-            X = _vstack([last_X[-self.min_exog_samples:], X])
+            X = _vstack([last_X[-self.min_exog_samples_:], X])
             if isinstance(self.exog_lags, dict):
                 X = _hstack(
                     [X[self.min_exog_samples_:]] + \
@@ -1262,6 +1262,7 @@ class ForecastingRectified(BaseForecaster):
         self.lags = lags
         self.exog_lags = exog_lags
         self.use_exog = use_exog
+        self.accept_nan = False
         self.n_jobs = n_jobs
         self.verbose = verbose
 
