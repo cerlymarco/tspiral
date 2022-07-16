@@ -11,29 +11,29 @@ tspiral provides 4 optimized forecasting techniques:
 
 Lagged target features are combined with exogenous regressors (if provided) and lagged exogenous features (if specified). A scikit-learn compatible regressor is fitted on the whole merged data. The fitted estimator is called iteratively to predict multiple steps ahead.
 
-![recursive-standard](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/recursive-standard.png)
+![recursive-standard](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/recursive-standard.PNG)
 
 Which in a compact way we can summarize in:
 
-![recursive-compact](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/recursive-compact.png)
+![recursive-compact](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/recursive-compact.PNG)
 
 - **Direct Forecasting** 
 
 A scikit-learn compatible regressor is fitted on the lagged data for each time step to forecast.
 
-![direct](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/direct.png)
+![direct](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/direct.PNG)
 
 - **Stacking Forecasting** 
 
 Multiple recursive time series forecasters are fitted and combined on the final portion of the training data with a meta-learner.
 
-![stacked](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/stacked.png)
+![stacked](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/stacked.PNG)
 
 - **Rectified Forecasting** 
 
 Multiple recursive time series forecasters are fitted on different sliding window training bunches. Forecasts are adjusted and combined fitting a meta-learner for each forecasting step.
 
-![rectify](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/rectify.png)
+![rectify](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/rectify.PNG)
 
 Multivariate time series forecasting is natively supported for all the forecasting methods available.
 
