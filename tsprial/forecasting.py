@@ -1405,7 +1405,7 @@ class ForecastingRectified(BaseForecaster):
 
         X_pred = pred.reshape(-1, self.n_targets_)
         for i in range(len(X_pred)):
-            if i >= self.n_estimators:
+            if i >= len(self.final_estimators_):
                 break
             pred[i] = self.final_estimators_[i].predict(X_pred[[i]])
 

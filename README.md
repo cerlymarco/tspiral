@@ -1,7 +1,7 @@
 # tspiral
 A python package for time series forecasting with scikit-learn estimators.
 
-tspiral is not a library that works as a wrapper for other tools and methods for time series forecasting. tspiral directly provides scikit-learn estimators for time series forecasting. it leverages the benefit of using scikit-learn syntax and components to easily access the open source ecosystem built on top of the scikit-learn community. It easily maps a complex time series forecasting problems into a tabular supervised regression task, solving it with a standard approach. 
+tspiral is not a library that works as a wrapper for other tools and methods for time series forecasting. tspiral directly provides scikit-learn estimators for time series forecasting. It leverages the benefit of using scikit-learn syntax and components to easily access the open source ecosystem built on top of the scikit-learn community. It easily maps a complex time series forecasting problems into a tabular supervised regression task, solving it with a standard approach. 
 
 ## Overview
 
