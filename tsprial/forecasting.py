@@ -399,6 +399,7 @@ class ForecastingCascade(BaseForecaster):
 
         sample_weight : array-like of shape (n_samples,), default=None
             Sample weights. If None, then samples are equally weighted.
+            Effective only if estimator accepts sample_weight.
 
         check_input: bool, default=True
             Allow to bypass several input checking.
@@ -438,7 +439,9 @@ class ForecastingCascade(BaseForecaster):
             else:
                 X = X[self.min_samples_:]
 
-        if sample_weight is not None:
+        use_weights = sample_weight is not None and \
+                      has_fit_parameter(self.estimator, 'sample_weight')
+        if use_weights:
             sample_weight = sample_weight[self.min_samples_:]
 
         y = y.reshape(-1, self.n_targets_)
@@ -451,7 +454,7 @@ class ForecastingCascade(BaseForecaster):
         if self.accept_nan:
             mask = ~(np.isnan(y).any(1))
             X, y = X[mask], y[mask]
-            if sample_weight is not None:
+            if use_weights:
                 sample_weight = sample_weight[mask]
 
             if len(y) < 1:
@@ -459,7 +462,10 @@ class ForecastingCascade(BaseForecaster):
 
         y = y if self.n_targets_ > 1 else y.ravel()
         self.estimator_ = clone(self.estimator)
-        self.estimator_.fit(X, y, sample_weight)
+        if use_weights:
+            self.estimator_.fit(X, y, sample_weight)
+        else:
+            self.estimator_.fit(X, y)
 
         return self
 
@@ -712,6 +718,7 @@ class ForecastingChain(BaseForecaster):
 
         sample_weight : array-like of shape (n_samples,), default=None
             Sample weights. If None, then samples are equally weighted.
+            Effective only if estimator accepts sample_weight.
 
         Returns
         -------
@@ -824,8 +831,9 @@ class ForecastingStacked(BaseForecaster):
 
     Parameters
     ----------
-    estimators : iterable of objects
-        A list of supervised learning estimators compatible with scikit-learn.
+    estimators : object or iterable of objects
+        A single or list of supervised learning estimators compatible with
+        scikit-learn.
 
     final_estimator : object, default=None
         A regressor which will be used to combine the recursive forecasts.
@@ -964,16 +972,17 @@ class ForecastingStacked(BaseForecaster):
 
         sample_weight : array-like of shape (n_samples,), default=None
             Sample weights. If None, then samples are equally weighted.
+            Effective only if estimators accept sample_weight.
 
         Returns
         -------
         self : object
         """
 
-        if not np.iterable(self.estimators):
+        if not isinstance(self.estimators, (list, tuple, set)):
             estimators = [self.estimators]
         else:
-            estimators = list(self.estimators)
+            estimators = self.estimators
 
         for est in estimators:
             if not hasattr(est, 'fit') or not hasattr(est, 'predict'):
@@ -1290,6 +1299,7 @@ class ForecastingRectified(BaseForecaster):
 
         sample_weight : array-like of shape (n_samples,), default=None
             Sample weights. If None, then samples are equally weighted.
+            Effective only if estimator accepts sample_weight.
 
         Returns
         -------
@@ -1406,10 +1416,8 @@ class ForecastingRectified(BaseForecaster):
         X_pred = pred.reshape(-1, self.n_targets_)
         for i in range(len(X_pred)):
             if i >= len(self.final_estimators_):
+                pred[i:] = self.final_estimators_[-1].predict(X_pred[i:])
                 break
             pred[i] = self.final_estimators_[i].predict(X_pred[[i]])
-
-        if len(pred) > i:
-            pred[i:] = self.final_estimators_[-1].predict(X_pred[i:])
 
         return pred
