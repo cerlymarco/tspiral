@@ -59,7 +59,7 @@ model = ForecastingCascade(
     use_exog=False,
     accept_nan=False
 )
-model.fit(np.arange(len(y)), y)
+model.fit(None, y)
 forecasts = model.predict(np.arange(24*3))
 ```
 
@@ -78,7 +78,7 @@ model = ForecastingChain(
     use_exog=False,
     accept_nan=False
 )
-model.fit(np.arange(len(y)), y)
+model.fit(None, y)
 forecasts = model.predict(np.arange(24*3))
 ```
 
@@ -97,7 +97,7 @@ model = ForecastingStacked(
     lags=range(1,24+1),
     use_exog=False
 )
-model.fit(np.arange(len(y)), y)
+model.fit(None, y)
 forecasts = model.predict(np.arange(24*3))
 ```
 
@@ -116,7 +116,7 @@ model = ForecastingRectified(
     lags=range(1,24+1),
     use_exog=False
 )
-model.fit(np.arange(len(y)), y)
+model.fit(None, y)
 forecasts = model.predict(np.arange(24*3))
 ```
 

@@ -1009,6 +1009,7 @@ class ForecastingStacked(BaseForecaster):
             'lags': self.lags_,
             'exog_lags': self.exog_lags_,
             'use_exog': self.use_exog,
+            'accept_nan' : False
         }
         preds = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
             delayed(_fit_single(
@@ -1018,7 +1019,7 @@ class ForecastingStacked(BaseForecaster):
                 sample_weight,
                 train_id,
                 **fit_params
-            ).predict)(X[test_id], check_input=False)
+            ).predict)(X[test_id] if self.use_exog else test_id, check_input=False)
             for est in estimators
         )
 
@@ -1328,6 +1329,7 @@ class ForecastingRectified(BaseForecaster):
             'lags': self.lags_,
             'exog_lags': self.exog_lags_,
             'use_exog': self.use_exog,
+            'accept_nan': False
         }
         self.estimator_ = _fit_single(
             self.estimator, X, y, sample_weight, None, **fit_params
@@ -1341,7 +1343,7 @@ class ForecastingRectified(BaseForecaster):
                 sample_weight,
                 train_id,
                 **fit_params
-            ).predict)(X[test_id], check_input=False)
+            ).predict)(X[test_id] if self.use_exog else test_id, check_input=False)
             for train_id, test_id in cv.split(y)
         )
 
