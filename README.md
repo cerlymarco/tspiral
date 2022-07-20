@@ -43,6 +43,10 @@ pip install --upgrade tspiral
 ```
 The module depends only on NumPy and Scikit-Learn (>=0.24.2). Python 3.6 or above is supported.
 
+## Media
+
+- [How to Improve Recursive Time Series Forecasting](https://medium.com/towards-data-science/how-to-improve-recursive-time-series-forecasting-ff5b90a98eeb)
+
 ## Usage
 
 - **Recursive Forecasting** 
