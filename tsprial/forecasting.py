@@ -53,7 +53,7 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
 
             msg = "Invalid {}. Lags must be an iterable of integers >0."
 
-            if not np.iterable(lags):
+            if not np.iterable(lags) or isinstance(lags, str):
                 raise ValueError(msg.format(param_name))
 
             lags = sorted(list(set(lags)))
@@ -86,7 +86,7 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
                         self.min_exog_samples_ = max(
                             self.min_exog_samples_, max(self.exog_lags_[c])
                         )
-                elif np.iterable(self.exog_lags):
+                elif np.iterable(self.exog_lags) and not isinstance(self.exog_lags, str):
                     self.exog_lags_ = _check_lags("exog_lags", self.exog_lags)
                     self.min_exog_samples_ = max(self.exog_lags_)
                 else:
@@ -96,11 +96,11 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
             self.lags_ = self.lags
             self.min_ar_samples_ = max(self.lags)
             self.exog_lags_ = self.exog_lags
-            if self.use_exog and self.exog_lags is not None:
-                if isinstance(self.exog_lags, dict):
-                    self.min_exog_samples_ = max(sum(self.exog_lags.values(), []))
+            if self.use_exog and self.exog_lags_ is not None:
+                if isinstance(self.exog_lags_, dict):
+                    self.min_exog_samples_ = max(sum(self.exog_lags_.values(), []))
                 else:
-                    self.min_exog_samples_ = max(self.exog_lags)
+                    self.min_exog_samples_ = max(self.exog_lags_)
             else:
                 self.min_exog_samples_ = 0
 
@@ -135,8 +135,11 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
                 ensure_min_samples=self.min_samples_ + 1,
             )
 
-        if sample_weight is not None:
+        if sample_weight is not None and \
+            has_fit_parameter(self.estimator, 'sample_weight'):
             sample_weight = _check_sample_weight(sample_weight, y)
+        else:
+            sample_weight = None
 
         return X, y, sample_weight
 
@@ -190,12 +193,17 @@ class BaseForecaster(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples.
+        X : array-like of shape (n_samples,) or (n_samples, n_features) if
+            use_exog is set to True
+            Exogenous features in ascending temporal order.
+            An array-like with the first dimension equal to at least min_samples_
+            is required. Effective only with use_exog=True.
 
         y : array-like of shape (n_samples,) or also (n_samples, n_targets) if
             multiple outputs
-            True values for X.
+            Series to forecast in ascending temporal order.
+            An array-like with the first dimension equal to at least min_samples_
+            is required.
 
         sample_weight : array-like of shape (n_samples,), default=None
             Sample weights.
@@ -349,7 +357,7 @@ class ForecastingCascade(BaseForecaster):
     ...     use_exog=False,
     ...     accept_nan=False
     ... )
-    >>> model.fit(np.arange(len(y)), y)
+    >>> model.fit(None, y)
     >>> forecasts = model.predict(np.arange(24*3))
     """
 
@@ -418,31 +426,26 @@ class ForecastingCascade(BaseForecaster):
         if self.use_exog:
             self._last_X = X[-self.min_samples_:]
 
-            if isinstance(self.exog_lags, dict):
+            if isinstance(self.exog_lags_, dict):
                 n_features = X.shape[1]
-                for c in self.exog_lags.keys():
-                    if c < 0 or c >= n_features:
-                        raise ValueError(
-                            "Invalid exog_lags. "
-                            "Keys must be integers in [0,n_features_in_)."
-                        )
+                if min(self.exog_lags_.keys()) < 0 or \
+                    max(self.exog_lags_.keys()) >= n_features:
+                    raise ValueError(
+                        "Invalid exog_lags. "
+                        "Keys must be integers in [0,n_features_in_)."
+                    )
                 X = _hstack(
                     [X[self.min_samples_:]] + \
                     [self._create_lags(X[:, [c]], lags, self.min_samples_)
                      for c, lags in self.exog_lags_.items()]
                 )
-            elif np.iterable(self.exog_lags):
+            elif np.iterable(self.exog_lags_):
                 X = _hstack(
                     [X[self.min_samples_:]] + \
                     [self._create_lags(X, self.exog_lags_, self.min_samples_)]
                 )
             else:
                 X = X[self.min_samples_:]
-
-        use_weights = sample_weight is not None and \
-                      has_fit_parameter(self.estimator, 'sample_weight')
-        if use_weights:
-            sample_weight = sample_weight[self.min_samples_:]
 
         y = y.reshape(-1, self.n_targets_)
         self._last_y = y[-self.min_samples_:]
@@ -454,7 +457,7 @@ class ForecastingCascade(BaseForecaster):
         if self.accept_nan:
             mask = ~(np.isnan(y).any(1))
             X, y = X[mask], y[mask]
-            if use_weights:
+            if sample_weight is not None:
                 sample_weight = sample_weight[mask]
 
             if len(y) < 1:
@@ -462,10 +465,10 @@ class ForecastingCascade(BaseForecaster):
 
         y = y if self.n_targets_ > 1 else y.ravel()
         self.estimator_ = clone(self.estimator)
-        if use_weights:
-            self.estimator_.fit(X, y, sample_weight)
-        else:
+        if sample_weight is None:
             self.estimator_.fit(X, y)
+        else:
+            self.estimator_.fit(X, y, sample_weight=sample_weight)
 
         return self
 
@@ -533,17 +536,17 @@ class ForecastingCascade(BaseForecaster):
         if check_input:
             X, last_y, last_X = self._validate_data_predict(X, last_y, last_X)
 
-        if self.use_exog and self.exog_lags is not None:
+        if self.use_exog and self.exog_lags_ is not None:
             if last_X is None:
                 last_X = self._last_X.copy()
             X = _vstack([last_X[-self.min_exog_samples_:], X])
-            if isinstance(self.exog_lags, dict):
+            if isinstance(self.exog_lags_, dict):
                 X = _hstack(
                     [X[self.min_exog_samples_:]] + \
                     [self._create_lags(X[:, [c]], lags, self.min_exog_samples_)
                      for c, lags in self.exog_lags_.items()]
                 )
-            elif np.iterable(self.exog_lags):
+            elif np.iterable(self.exog_lags_):
                 X = _hstack(
                     [X[self.min_exog_samples_:]] + \
                     [self._create_lags(X, self.exog_lags_, self.min_exog_samples_)]
@@ -669,7 +672,7 @@ class ForecastingChain(BaseForecaster):
     ...     use_exog=False,
     ...     accept_nan=False
     ... )
-    >>> model.fit(np.arange(len(y)), y)
+    >>> model.fit(None, y)
     >>> forecasts = model.predict(np.arange(24*3))
     """
 
@@ -741,7 +744,7 @@ class ForecastingChain(BaseForecaster):
             for i in range(self.n_estimators)
         ]
 
-        estimators = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
+        self.estimators_ = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
             delayed(ForecastingCascade(
                 clone(self.estimator),
                 lags=ls,
@@ -751,7 +754,7 @@ class ForecastingChain(BaseForecaster):
             ).fit)(X, y, sample_weight, False)
             for ls in lags
         )
-        self.estimators_ = sorted(estimators, key=lambda m: m.chunk_size_)
+        # self.estimators_ = sorted(self.estimators_, key=lambda m: m.chunk_size_)
 
         return self
 
@@ -804,17 +807,21 @@ class ForecastingChain(BaseForecaster):
         else:
             preds = np.zeros((len(X),))
 
+        i = 0
         for i, est in enumerate(self.estimators_[:-1]):
             i = (i + 1) * self.chunk_size_
+            if (i - self.chunk_size_) > len(preds):
+                break
             preds[i - self.chunk_size_:i] = est.predict(
                 X[:i], last_y=last_y, last_X=last_X,
                 check_input=False, **predict_params
             )[i - self.chunk_size_:]
 
-        preds[i:] = self.estimators_[-1].predict(
-            X, last_y=last_y, last_X=last_X,
-            check_input=False, **predict_params
-        )[i:]
+        if i <= len(preds):
+            preds[i:] = self.estimators_[-1].predict(
+                X, last_y=last_y, last_X=last_X,
+                check_input=False, **predict_params
+            )[i:]
 
         return preds
 
@@ -922,7 +929,7 @@ class ForecastingStacked(BaseForecaster):
     ...     lags=range(1,24+1),
     ...     use_exog=False
     ... )
-    >>> model.fit(np.arange(len(y)), y)
+    >>> model.fit(None, y)
     >>> forecasts = model.predict(np.arange(24*3))
     """
 
@@ -1248,7 +1255,7 @@ class ForecastingRectified(BaseForecaster):
     ...     lags=range(1,24+1),
     ...     use_exog=False
     ... )
-    >>> model.fit(np.arange(len(y)), y)
+    >>> model.fit(None, y)
     >>> forecasts = model.predict(np.arange(24*3))
     """
 
@@ -1323,7 +1330,7 @@ class ForecastingRectified(BaseForecaster):
         X, y, sample_weight = self._validate_data_fit(X, y, sample_weight)
         self.n_targets_ = y.shape[1] if len(y.shape) > 1 else 1
 
-        cv = TemporalSplit(self.n_estimators, test_size=self.test_size, gap=1)
+        cv = TemporalSplit(self.n_estimators, test_size=self.test_size, gap=self.chunk_size_)
 
         fit_params = {
             'lags': self.lags_,
@@ -1358,10 +1365,14 @@ class ForecastingRectified(BaseForecaster):
                 if self.final_estimator is not None else
                 Ridge().fit(*x)
             )(
-                (preds[:, h].reshape(-1, self.n_targets_),
+                (_hstack([X,preds[:, h].reshape(-1, self.n_targets_)])
+                 if self.use_exog else
+                 preds[:, h].reshape(-1, self.n_targets_),
                  trues[:, h].reshape(-1, self.n_targets_))
                 if self.n_targets_ > 1 else
-                (preds[:, [h]], trues[:, h])
+                (_hstack([X,preds[:, [h]]])
+                 if self.use_exog else
+                 preds[:, [h]], trues[:, h])
             )
             for h in range(preds.shape[1])
         )
