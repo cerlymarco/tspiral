@@ -1357,6 +1357,8 @@ class ForecastingRectified(BaseForecaster):
         preds = _hstack([p.reshape(-1, self.n_targets_) for p in preds]).T
         trues = _hstack([y[test_id].reshape(-1, self.n_targets_)
                          for _, test_id in cv.split(y)]).T
+        if self.use_exog:
+            X = _vstack([X[test_id][None, ...] for _, test_id in cv.split(y)])
 
         self.final_estimators_ = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
             delayed(
@@ -1365,12 +1367,12 @@ class ForecastingRectified(BaseForecaster):
                 if self.final_estimator is not None else
                 Ridge().fit(*x)
             )(
-                (_hstack([X,preds[:, h].reshape(-1, self.n_targets_)])
+                (_hstack([X[:, h], preds[:, h].reshape(-1, self.n_targets_)])
                  if self.use_exog else
                  preds[:, h].reshape(-1, self.n_targets_),
                  trues[:, h].reshape(-1, self.n_targets_))
                 if self.n_targets_ > 1 else
-                (_hstack([X,preds[:, [h]]])
+                (_hstack([X[:, h], preds[:, [h]]])
                  if self.use_exog else
                  preds[:, [h]], trues[:, h])
             )
@@ -1426,11 +1428,15 @@ class ForecastingRectified(BaseForecaster):
             X, last_y=last_y, last_X=last_X, check_input=False, **predict_params
         )
 
-        X_pred = pred.reshape(-1, self.n_targets_)
-        for i in range(len(X_pred)):
+        if self.use_exog:
+            X = _hstack([X, pred.reshape(-1, self.n_targets_)])
+        else:
+            X = pred.reshape(-1, self.n_targets_)
+
+        for i in range(len(X)):
             if i >= len(self.final_estimators_):
-                pred[i:] = self.final_estimators_[-1].predict(X_pred[i:])
+                pred[i:] = self.final_estimators_[-1].predict(X[i:])
                 break
-            pred[i] = self.final_estimators_[i].predict(X_pred[[i]])
+            pred[i] = self.final_estimators_[i].predict(X[[i]])
 
         return pred
