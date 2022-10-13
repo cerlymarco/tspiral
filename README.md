@@ -47,6 +47,7 @@ The module depends only on NumPy and Scikit-Learn (>=0.24.2). Python 3.6 or abov
 
 - [How to Improve Recursive Time Series Forecasting](https://medium.com/towards-data-science/how-to-improve-recursive-time-series-forecasting-ff5b90a98eeb)
 - [Time Series Forecasting with Feature Selection: Why you may need it](https://medium.com/towards-data-science/time-series-forecasting-with-feature-selection-why-you-may-need-it-696b23ecc329)
+- [Forecast Time Series with Missing Values: Beyond Linear Interpolation](https://medium.com/towards-data-science/forecast-time-series-with-missing-values-beyond-linear-interpolation-2f2adf0a0cba)
 
 ## Usage
 
