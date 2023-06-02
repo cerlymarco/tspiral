@@ -56,7 +56,7 @@ The module depends only on NumPy and Scikit-Learn (>=0.24.2). Python 3.6 or abov
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingCascade
+from tspiral.forecasting import ForecastingCascade
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -74,7 +74,7 @@ forecasts = model.predict(np.arange(24*3))
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingChain
+from tspiral.forecasting import ForecastingChain
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -94,7 +94,7 @@ forecasts = model.predict(np.arange(24*3))
 import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.tree import DecisionTreeRegressor
-from tsprial.forecasting import ForecastingStacked
+from tspiral.forecasting import ForecastingStacked
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -112,7 +112,7 @@ forecasts = model.predict(np.arange(24*3))
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingRectified
+from tspiral.forecasting import ForecastingRectified
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
