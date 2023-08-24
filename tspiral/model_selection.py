@@ -110,12 +110,14 @@ class TemporalSplit(BaseCrossValidator):
 
         if self.gap < 1:
             raise ValueError(
-                "gap must be an integer > 0. Got {}.".format(self.gap)
+                "gap must be an integer > 0. Got {} ({})." \
+                    .format(self.gap, type(self.gap))
             )
 
         if self.n_splits < 2:
             raise ValueError(
-                "n_splits must be an integer > 1. Got {}.".format(self.n_splits)
+                "n_splits must be an integer > 1. Got {} ({})." \
+                    .format(self.n_splits, type(self.n_splits))
             )
 
         X, y, groups = indexable(X, y, groups)

@@ -19,9 +19,17 @@ Which in a compact way we can summarize in:
 
 - **Direct Forecasting** 
 
-A scikit-learn compatible regressor is fitted on the lagged data for each time step to forecast.
+A scikit-learn compatible regressor is fitted on the lagged data for each time step to forecast. 
 
 ![direct](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/direct.PNG)
+
+Which in a compact way we can summarize in:
+
+![direct-compact](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/direct-compact.png)
+
+It's also possible to mix recursive and direct forecasting by predicting directly some future horizons while using recursive on the remaining. 
+
+![directmix-compact](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/directmix-compact.png)
 
 - **Stacking Forecasting** 
 
@@ -31,7 +39,7 @@ Multiple recursive time series forecasters are fitted and combined on the final 
 
 - **Rectified Forecasting** 
 
-Multiple recursive time series forecasters are fitted on different sliding window training bunches. Forecasts are adjusted and combined fitting a meta-learner for each forecasting step.
+Multiple direct time series forecasters are fitted and combined on the final portion of the training data with a meta-learner.
 
 ![rectify](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/rectify.PNG)
 
@@ -57,7 +65,7 @@ The module depends only on NumPy and Scikit-Learn (>=0.24.2). Python 3.6 or abov
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingCascade
+from tspiral.forecasting import ForecastingCascade
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -75,7 +83,7 @@ forecasts = model.predict(np.arange(24*3))
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingChain
+from tspiral.forecasting import ForecastingChain
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -95,7 +103,7 @@ forecasts = model.predict(np.arange(24*3))
 import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.tree import DecisionTreeRegressor
-from tsprial.forecasting import ForecastingStacked
+from tspiral.forecasting import ForecastingStacked
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
@@ -113,12 +121,13 @@ forecasts = model.predict(np.arange(24*3))
 ```python
 import numpy as np
 from sklearn.linear_model import Ridge
-from tsprial.forecasting import ForecastingRectified
+from sklearn.tree import DecisionTreeRegressor
+from tspiral.forecasting import ForecastingRectified
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
 y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
 model = ForecastingRectified(
-    Ridge(),
+    [Ridge(), DecisionTreeRegressor()],
     n_estimators=200,
     test_size=24*3,
     lags=range(1,24+1),
