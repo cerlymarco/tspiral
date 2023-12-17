@@ -43,13 +43,13 @@ Multiple direct time series forecasters are fitted and combined on the final por
 
 ![rectify](https://raw.githubusercontent.com/cerlymarco/tspiral/master/imgs/rectify.PNG)
 
-Multivariate time series forecasting is natively supported for all the forecasting methods available.
+**GLOBAL and MULTIVARIATE time series forecasting are natively supported for all the forecasting methods available.** For GLOBAL forecasting, use the `groups` parameter to specify the column of the input data that contains the group identifiers. For MULTIVARIATE forecasting, pass a target with multiple columns when calling fit. 
 
 ## Installation
 ```shell
 pip install --upgrade tspiral
 ```
-The module depends only on NumPy and Scikit-Learn (>=0.24.2). Python 3.6 or above is supported.
+The module depends only on NumPy, Pandas, and Scikit-Learn (>=0.24.2). Python 3.6 or above is supported.
 
 ## Media
 
@@ -68,15 +68,17 @@ from sklearn.linear_model import Ridge
 from tspiral.forecasting import ForecastingCascade
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
-y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+y = np.concatenate([
+    2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e,
+    2*np.cos(np.arange(timesteps)*(2*np.pi/24))+e,
+])
+X = [[0]]*timesteps+[[1]]*timesteps 
 model = ForecastingCascade(
     Ridge(),
     lags=range(1,24+1),
-    use_exog=False,
-    accept_nan=False
-)
-model.fit(None, y)
-forecasts = model.predict(np.arange(24*3))
+    groups=[0],
+).fit(X, y)
+forecasts = model.predict([[0]]*80+[[1]]*80)
 ```
 
 - **Direct Forecasting** 
@@ -86,16 +88,18 @@ from sklearn.linear_model import Ridge
 from tspiral.forecasting import ForecastingChain
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
-y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+y = np.concatenate([
+    2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e,
+    2*np.cos(np.arange(timesteps)*(2*np.pi/24))+e,
+])
+X = [[0]]*timesteps+[[1]]*timesteps 
 model = ForecastingChain(
     Ridge(),
     n_estimators=24,
     lags=range(1,24+1),
-    use_exog=False,
-    accept_nan=False
-)
-model.fit(None, y)
-forecasts = model.predict(np.arange(24*3))
+    groups=[0],
+).fit(X, y)
+forecasts = model.predict([[0]]*80+[[1]]*80)
 ```
 
 - **Stacking Forecasting** 
@@ -106,15 +110,18 @@ from sklearn.tree import DecisionTreeRegressor
 from tspiral.forecasting import ForecastingStacked
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
-y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+y = np.concatenate([
+    2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e,
+    2*np.cos(np.arange(timesteps)*(2*np.pi/24))+e,
+])
+X = [[0]]*timesteps+[[1]]*timesteps 
 model = ForecastingStacked(
     [Ridge(), DecisionTreeRegressor()],
     test_size=24*3,
     lags=range(1,24+1),
-    use_exog=False
-)
-model.fit(None, y)
-forecasts = model.predict(np.arange(24*3))
+    groups=[0],
+).fit(X, y)
+forecasts = model.predict([[0]]*80+[[1]]*80)
 ```
 
 - **Rectified Forecasting** 
@@ -125,16 +132,19 @@ from sklearn.tree import DecisionTreeRegressor
 from tspiral.forecasting import ForecastingRectified
 timesteps = 400
 e = np.random.normal(0,1, (timesteps,))
-y = 2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e
+y = np.concatenate([
+    2*np.sin(np.arange(timesteps)*(2*np.pi/24))+e,
+    2*np.cos(np.arange(timesteps)*(2*np.pi/24))+e,
+])
+X = [[0]]*timesteps+[[1]]*timesteps  
 model = ForecastingRectified(
     [Ridge(), DecisionTreeRegressor()],
-    n_estimators=200,
+    n_estimators=24*3,
     test_size=24*3,
     lags=range(1,24+1),
-    use_exog=False
-)
-model.fit(None, y)
-forecasts = model.predict(np.arange(24*3))
+    groups=[0],
+).fit(X, y)
+forecasts = model.predict([[0]]*80+[[1]]*80)
 ```
 
 More examples in the [notebooks folder](https://github.com/cerlymarco/tspiral/tree/main/notebooks).

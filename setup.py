@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 HERE = pathlib.Path(__file__).parent
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 PACKAGE_NAME = 'tspiral'
 AUTHOR = 'Marco Cerliani'
 AUTHOR_EMAIL = 'cerlymarco@gmail.com'
@@ -16,7 +16,8 @@ LONG_DESC_TYPE = "text/markdown"
 
 INSTALL_REQUIRES = [
     'scikit-learn>=0.24.2',
-    'numpy'
+    'numpy',
+    'pandas',
 ]
 
 setup(name=PACKAGE_NAME,
